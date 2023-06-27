@@ -131,15 +131,16 @@ trait Point<'a, const BASE_FIELD_SIZE: usize> {
         
         // get the bits remaining from the modulus to encode the metadata
         let rb = Self::MODULUS_HEX.len() * 4 - Self::modulus().bits() as usize;
-
-        // if length(serialized) == BASE_FIELD_SIZE (<=> rb >=3) then all the metadata bits are included
         let mut metadata_bytes = [0u8; 2];
 
+        // if length(serialized) == BASE_FIELD_SIZE (<=> rb >=3) then all the metadata bits 
+        // are included in the x coordinate octet string representation. Otherwise, if rb < 3,
+        // there will be an extra octet encoding some of the metadata bits
         if rb < 3 {
             metadata_bytes[0] = serialized[0];
             metadata_bytes[1] = serialized[1];
 
-            // the first byte is only used for metadata
+            // the first octet is only used for metadata
             serialized.remove(0);
         } else {
             metadata_bytes[1] = serialized[0];
@@ -161,7 +162,7 @@ trait Point<'a, const BASE_FIELD_SIZE: usize> {
         let i_bit = metadata & 0x0002 == 0x0002;
         let s_bit = metadata & 0x0001 == 0x0001;
 
-        // check for point at infinity
+        // check if point is at infinity
         if i_bit {
             //TODO: probably the least efficient way to do this
             if serialized.clone().into_iter().any(|el| el != 0u8) {
@@ -180,7 +181,7 @@ trait Point<'a, const BASE_FIELD_SIZE: usize> {
             return (x, y)
         }
 
-        // Check that C_bit is in fact set
+        // Uncompressed encoding: not yet implemented
         if !c_bit{
             // TODO: should decode from uncompressed
             panic!("Uncompressed point decoding is not supported yet")
